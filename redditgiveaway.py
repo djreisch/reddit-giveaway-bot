@@ -120,8 +120,8 @@ except IOError:
   sys.exit(1)
 
 logger.info("Logging in...")
-r = praw.Reddit() #used for posting the giveaway
-rmsg = praw.Reddit() #used to comment and send messages to users. Can be the same/different account
+r = praw.Reddit('postaccount') #used for posting the giveaway
+rmsg = praw.Reddit('msgaccount') #used to comment and send messages to users. Can be the same/different account
 
 if argReddit:
   try:
