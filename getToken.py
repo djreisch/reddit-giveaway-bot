@@ -23,7 +23,7 @@ def receive_connection():
     """
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(('10.0.0.48', 8080))
+    server.bind(('localhost', 8080))
     server.listen(1)
     client = server.accept()[0]
     server.close()
@@ -64,7 +64,7 @@ def main():
 
     reddit = praw.Reddit(client_id=client_id.strip(),
                          client_secret=client_secret.strip(),
-                         redirect_uri='http://10.0.0.48:8080',
+                         redirect_uri='http://localhost:8080',
                          user_agent='praw_refresh_token_example')
     state = str(random.randint(0, 65000))
     url = reddit.auth.url(scopes, state, 'permanent')
