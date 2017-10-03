@@ -40,61 +40,74 @@ def humanize_seconds(seconds):
 
 parser = argparse.ArgumentParser(description="Bot to run giveaways on Reddit.")
 
-parser.add_argument('-a', '--age', type=int, default=1,
-  help="The minimum age (in days) of user accounts that are eligible for "
-    "the giveaway (prevents sockpuppet accounts)")
+#parser.add_argument('-a', '--age', type=int, default=1,
+#  help="The minimum age (in days) of user accounts that are eligible for "
+#    "the giveaway (prevents sockpuppet accounts)")
 
-parser.add_argument('-p', '--poll', type=int, default=30,
-  help="Seconds between polls for new comments. Recommended to be >30 seconds "
-    "because Reddit caches results for that long.")
+#parser.add_argument('-p', '--poll', type=int, default=30,
+#  help="Seconds between polls for new comments. Recommended to be >30 seconds "
+#    "because Reddit caches results for that long.")
 
-parser.add_argument('-k', '--keyword',
-  help="If provided, this keyword must be present in the comment for it to "
-    "be eligible for a prize. Prevents chatter from triggering a prize.")
+#parser.add_argument('-k', '--keyword',
+#  help="If provided, this keyword must be present in the comment for it to "
+#    "be eligible for a prize. Prevents chatter from triggering a prize.")
 
-parser.add_argument('--reply', choices=['inline', 'pm'], default='pm',
-  help="Whether to reply with the prize inline or through pm. Defaults "
-    "to pm.")
+#parser.add_argument('--reply', choices=['inline', 'pm'], default='pm',
+#  help="Whether to reply with the prize inline or through pm. Defaults "
+#    "to pm.")
 
-parser.add_argument('--random', default='store_true',
-  help="Assigns prizes randomly instead of by submission time. -w is required "
-        "if this argument is provided.")
+#parser.add_argument('--random', default='store_true',
+#  help="Assigns prizes randomly instead of by submission time. -w is required "
+#        "if this argument is provided.")
 
-parser.add_argument('-w', '--wait', type=int,
-  help="Time in minutes to wait before checking comments. Only used in "
-    "combination with --random. Recommended to be >30 minutes.")
+#parser.add_argument('-w', '--wait', type=int,
+#  help="Time in minutes to wait before checking comments. Only used in "
+#    "combination with --random. Recommended to be >30 minutes.")
 
 group = parser.add_mutually_exclusive_group(required=True)
 
-group.add_argument('-s', '--submission', default=None,
-  help="URL of an existing post to crawl for submissions. Optional use "
-    "instead of -r.")
+#group.add_argument('-s', '--submission', default=None,
+#  help="URL of an existing post to crawl for submissions. Optional use "
+#    "instead of -r.")
 
-group.add_argument('-r', '--reddit', default=None,
-  help="The subreddit to post the giveaway to. This option creates a new "
-    "post managed by the bot and must not be specified with -s.")
+#group.add_argument('-r', '--reddit', default=None,
+#  help="The subreddit to post the giveaway to. This option creates a new "
+#    "post managed by the bot and must not be specified with -s.")
 
-parser.add_argument('keyfile',
-  help="A file path containing the keys to distribute (one per "
-    "line). Leading and trailing whitespace will be removed from each key.")
+#parser.add_argument('keyfile',
+#  help="A file path containing the keys to distribute (one per "
+#    "line). Leading and trailing whitespace will be removed from each key.")
 
-args = parser.parse_args(sys.argv[1:])
+#args = parser.parse_args(sys.argv[1:])
 
-if args.random and not args.wait:
-  logger.error("Random assignment of prizes must specify a wait time (-w), "
-    "otherwise first responders will have higher probability of winning. "
-    "At least 30 minutes of wait time is recommended.")
-  sys.exit(1)
+#if args.random and not args.wait:
+#  logger.error("Random assignment of prizes must specify a wait time (-w), "
+#    "otherwise first responders will have higher probability of winning. "
+#    "At least 30 minutes of wait time is recommended.")
+#  sys.exit(1)
 
-argAge = args.age
-argPoll = args.poll
-argKeyword = args.keyword
-argReply = args.reply
-argRandom = args.random
-argWait = args.wait
-argSubmission = args.submission
-argReddit = args.reddit
-argKeyfile = args.keyfile
+
+inputAddr = input("Please enter a subreddit or submission url [steam_giveaway]: ") or "steam_giveaway"
+if inputAddr[:5] == 'http:' or inputAddr[:6] == 'https:':
+    argReddit = ''
+    argSubmission = inputAddr
+else:
+    argReddit = inputAddr
+    argSubmission = ''
+
+argWait = int(input("Please enter a time to wait (in minutes) [1004]: ") or "1004")
+argKeyword = input("Please enter a keyword to use: ")
+while(not argKeyword.strip()):
+    argKeyword = input("Please enter a keyword to use: ")
+
+argKeyfile = input("Please enter a keyfile [keyfile.txt]") or "keyfile.txt"
+
+argAge = argsfile.age
+argPoll = argsfile.poll
+argReply = argsfile.reply
+argRandom = argsfile.random
+argKarmaLink = argsfile.karmaLink
+argKarmaComment = argsfile.karmaComment
 
 if argReddit == 'pcmasterrace':
   flair_open = argsfile.pcmr_flair_open
@@ -108,15 +121,15 @@ else:
   flair_open = ''
   flair_closed = ''
 
-min_account_age = timedelta(days=args.age)
-accountAge = timedelta(days=104) #sets minimum account age
+min_account_age = timedelta(days=argAge)
+argKeyword = argKeyword.strip()
 
 keys = []
 try:
   with open(argKeyfile, 'r') as f:
     keys = f.readlines()
 except IOError:
-  logger.error("Could not open the key file {0}.".format(keyfile))
+  logger.error("Could not open the key file {0}.".format(argKeyfile))
   sys.exit(1)
 
 logger.info("Logging in...")
@@ -191,20 +204,16 @@ while len(keys) > 0:
       created_date = datetime.fromtimestamp(int(author.created_utc))
       authors.add(author.name)
       if (datetime.now() - min_account_age) < created_date:
-        logger.warn("Author {0} is too new.".format(author.name))
-        continue
-
-      if (datetime.now() - accountAge) < created_date:
-        logger.warn("Author {0} is less then {1} days old.".format(author.name, accountAge))
+        logger.warn("Author {0} is less then {1} days old.".format(author.name, (datetime.now() - min_account_age)))
         continue
 
       # We aren't using author karma, just a one month age. Why? Simple. I was a lurker for almost a year. 
       # I had no karma but I wasn't a spam account. I think a karma limit (even small) would limit more legit users then fake account.
       # but the code block is below just in case I want to implement it...
 
-      #if ((author.link_karma < 50) or (author.comment_karma < 100)) and ((datetime.now() - accountAge) < created_date):
-      #  logger.warn("Author {0} does not have enough Karma. Post Karma: {1}, Comment Karma: {2}".format(author.name, author.link_karma, author.comment_karma))
-      #  continue
+      if ((author.link_karma < argKarmaLink) or (author.comment_karma < argKarmaComment)):
+        logger.warn("Author {0} does not have enough Karma. Post Karma: {1}, Comment Karma: {2}".format(author.name, author.link_karma, author.comment_karma))
+        continue
 
 
       try:
