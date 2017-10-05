@@ -20,8 +20,6 @@ def deleteLine(fileName, delString):
   for line in inFile:
     if delString.strip() != line.strip():
       output.append(line)
-    else:
-      print("Found key!")
   inFile.close()
   inFile = open(fileName, 'w')
   inFile.writelines(output)
