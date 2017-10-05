@@ -1,6 +1,8 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+todo.txt
+loginTest.py
 
 # C extensions
 *.so
