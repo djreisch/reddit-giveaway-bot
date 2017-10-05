@@ -14,6 +14,19 @@ logger = logging.getLogger("giveawaybot")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
 
+def deleteLine(fileName, delString):
+  inFile = open(fileName)
+  output = []
+  for line in inFile:
+    if delString.strip() != line.strip():
+      output.append(line)
+    else:
+      print("Found key!")
+  inFile.close()
+  inFile = open(fileName, 'w')
+  inFile.writelines(output)
+  inFile.close()
+
 def humanize_seconds(seconds):
   """
   Returns a humanized string representing time difference
@@ -128,6 +141,7 @@ keys = []
 try:
   with open(argKeyfile, 'r') as f:
     keys = f.readlines()
+  f.close()
 except IOError:
   logger.error("Could not open the key file {0}.".format(argKeyfile))
   sys.exit(1)
@@ -215,8 +229,8 @@ while len(keys) > 0:
         logger.warn("Author {0} does not have enough Karma. Post Karma: {1}, Comment Karma: {2}".format(author.name, author.link_karma, author.comment_karma))
         continue
 
-
       try:
+        delPrize = str(keys[0])
         message = strings.prize_reply_message.format(prize=keys.pop(0).strip(),
           url=argSubmission)
         if argReply == "inline":
@@ -224,6 +238,7 @@ while len(keys) > 0:
         else:
           rmsg.redditor(author.name).message(strings.reply_title, message)
           comment.reply(strings.generic_reply_message)
+          deleteLine(argKeyfile, delPrize)
       except AttributeError as err:
         logging.error("Missing value in strings file: {0}".format(err))
         sys.exit(1)
