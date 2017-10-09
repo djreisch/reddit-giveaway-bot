@@ -9,21 +9,22 @@ import sys
 
 import strings
 import argsfile
+from pythonFunctions import *
 
 logger = logging.getLogger("giveawaybot")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
 
-def deleteLine(fileName, delString):
-  inFile = open(fileName)
-  output = []
-  for line in inFile:
-    if delString.strip() != line.strip():
-      output.append(line)
-  inFile.close()
-  inFile = open(fileName, 'w')
-  inFile.writelines(output)
-  inFile.close()
+#def deleteLine(fileName, delString):
+#  inFile = open(fileName)
+#  output = []
+#  for line in inFile:
+#    if delString.strip() != line.strip():
+#      output.append(line)
+#  inFile.close()
+#  inFile = open(fileName, 'w')
+#  inFile.writelines(output)
+#  inFile.close()
 
 def humanize_seconds(seconds):
   """
