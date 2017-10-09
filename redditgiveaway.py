@@ -107,6 +107,9 @@ else:
     argReddit = inputAddr
     argSubmission = ''
 
+if(not argReddit):
+    #ignore next imputs and scan for them inside the submission text body
+
 argWait = int(input("Please enter a time to wait (in minutes) [1004]: ") or "1004")
 argKeyword = input("Please enter a keyword to use: ")
 while(not argKeyword.strip()):
