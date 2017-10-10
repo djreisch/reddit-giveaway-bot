@@ -50,66 +50,14 @@ def humanize_seconds(seconds):
   else:
     return None
 
-parser = argparse.ArgumentParser(description="Bot to run giveaways on Reddit.")
-
-#parser.add_argument('-a', '--age', type=int, default=1,
-#  help="The minimum age (in days) of user accounts that are eligible for "
-#    "the giveaway (prevents sockpuppet accounts)")
-
-#parser.add_argument('-p', '--poll', type=int, default=30,
-#  help="Seconds between polls for new comments. Recommended to be >30 seconds "
-#    "because Reddit caches results for that long.")
-
-#parser.add_argument('-k', '--keyword',
-#  help="If provided, this keyword must be present in the comment for it to "
-#    "be eligible for a prize. Prevents chatter from triggering a prize.")
-
-#parser.add_argument('--reply', choices=['inline', 'pm'], default='pm',
-#  help="Whether to reply with the prize inline or through pm. Defaults "
-#    "to pm.")
-
-#parser.add_argument('--random', default='store_true',
-#  help="Assigns prizes randomly instead of by submission time. -w is required "
-#        "if this argument is provided.")
-
-#parser.add_argument('-w', '--wait', type=int,
-#  help="Time in minutes to wait before checking comments. Only used in "
-#    "combination with --random. Recommended to be >30 minutes.")
-
-group = parser.add_mutually_exclusive_group(required=True)
-
-#group.add_argument('-s', '--submission', default=None,
-#  help="URL of an existing post to crawl for submissions. Optional use "
-#    "instead of -r.")
-
-#group.add_argument('-r', '--reddit', default=None,
-#  help="The subreddit to post the giveaway to. This option creates a new "
-#    "post managed by the bot and must not be specified with -s.")
-
-#parser.add_argument('keyfile',
-#  help="A file path containing the keys to distribute (one per "
-#    "line). Leading and trailing whitespace will be removed from each key.")
-
-#args = parser.parse_args(sys.argv[1:])
-
-#if args.random and not args.wait:
-#  logger.error("Random assignment of prizes must specify a wait time (-w), "
-#    "otherwise first responders will have higher probability of winning. "
-#    "At least 30 minutes of wait time is recommended.")
-#  sys.exit(1)
-
-
 inputAddr = input("Please enter a subreddit or submission url [steam_giveaway]: ") or "steam_giveaway"
 if inputAddr[:5] == 'http:' or inputAddr[:6] == 'https:':
     argReddit = ''
     argSubmission = inputAddr
+    argScrape = input("Scrape submission link for Giveaway Details? [y/N]: ") or 'no'
 else:
     argReddit = inputAddr
     argSubmission = ''
-
-if(not argReddit):
-    #ignore next imputs and scan for them inside the submission text body
-    null = ''
 
 argWait = int(input("Please enter a time to wait (in minutes) [1004]: ") or "1004")
 argKeyword = input("Please enter a keyword to use: ")
@@ -125,20 +73,26 @@ argRandom = argsfile.random
 argKarmaLink = argsfile.karmaLink
 argKarmaComment = argsfile.karmaComment
 
+
+if argScrape[0] == 'y':
+  #ignore next imputs and scan for them inside the submission text body
+  logger.warn('Scraping Submission Link for Reusable Data')
+
+
 if argReddit == 'pcmasterrace':
+  logger.warn('Using PCMasterRace Flairs')
   flair_open = argsfile.pcmr_flair_open
   flair_closed = argsfile.pcmr_flair_closed
 
 elif argReddit == 'steam_giveaway':
+  logger.warn('Using Steam_Giveaway Flairs')
   flair_open = argsfile.sg_flair_open
   flair_closed = argsfile.sg_flair_closed
 
 else:
+  logger.warn('No Flairs Set')
   flair_open = ''
   flair_closed = ''
-
-print(flair_open)
-print(flair_closed)
 
 min_account_age = timedelta(days=argAge)
 argKeyword = argKeyword.strip()
@@ -153,8 +107,8 @@ except IOError:
   sys.exit(1)
 
 logger.info("Logging in...")
-#r = praw.Reddit('postaccount') #used for posting the giveaway
-#rmsg = praw.Reddit('msgaccount') #used to comment and send messages to users. Can be the same/different account
+r = praw.Reddit('postaccount') #used for posting the giveaway
+rmsg = praw.Reddit('msgaccount') #used to comment and send messages to users. Can be the same/different account
 
 if argReddit:
   try:
@@ -176,6 +130,7 @@ if argReddit:
     logger.warning("Submission can be found at https://reddit.com" + str(rsub.permalink))
     if flair_open:
         rsub.flair.select(flair_open)
+        logger.warn('Flair set to flair_open')
     rsub.disable_inbox_replies()
   except praw.exceptions.APIException as err:
     logger.error("Error with submission: " + str(err))
@@ -260,7 +215,8 @@ try:
   else:
     rsub.edit(strings.end_message)
   if flair_closed:
-      rsub.flair.select(flair_closed)
+    rsub.flair.select(flair_closed)
+    logger.warn('Flair set to flair_closed')
 except praw.exceptions.APIException:
   logger.warning("Unable to edit original post to warn that giveaway "
     "is over. Recommend manually editing the post.")
