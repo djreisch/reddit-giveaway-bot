@@ -137,6 +137,9 @@ else:
   flair_open = ''
   flair_closed = ''
 
+print(flair_open)
+print(flair_closed)
+
 min_account_age = timedelta(days=argAge)
 argKeyword = argKeyword.strip()
 
@@ -150,8 +153,8 @@ except IOError:
   sys.exit(1)
 
 logger.info("Logging in...")
-r = praw.Reddit('postaccount') #used for posting the giveaway
-rmsg = praw.Reddit('msgaccount') #used to comment and send messages to users. Can be the same/different account
+#r = praw.Reddit('postaccount') #used for posting the giveaway
+#rmsg = praw.Reddit('msgaccount') #used to comment and send messages to users. Can be the same/different account
 
 if argReddit:
   try:
@@ -254,10 +257,10 @@ while len(keys) > 0:
 try:
   if rsub.selftext:
     rsub.edit(rsub.selftext + "\n\n**EDIT:** " + strings.end_message)
-    if flair_closed:
-      rsub.flair.select(flair_closed)
   else:
     rsub.edit(strings.end_message)
+  if flair_closed:
+      rsub.flair.select(flair_closed)
 except praw.exceptions.APIException:
   logger.warning("Unable to edit original post to warn that giveaway "
     "is over. Recommend manually editing the post.")
