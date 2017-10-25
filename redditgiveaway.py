@@ -15,17 +15,6 @@ logger = logging.getLogger("giveawaybot")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
 
-#def deleteLine(fileName, delString):
-#  inFile = open(fileName)
-#  output = []
-#  for line in inFile:
-#    if delString.strip() != line.strip():
-#      output.append(line)
-#  inFile.close()
-#  inFile = open(fileName, 'w')
-#  inFile.writelines(output)
-#  inFile.close()
-
 def humanize_seconds(seconds):
   """
   Returns a humanized string representing time difference
@@ -58,6 +47,7 @@ if inputAddr[:5] == 'http:' or inputAddr[:6] == 'https:':
 else:
     argReddit = inputAddr
     argSubmission = ''
+    argScrape = 'no'
 
 argWait = int(input("Please enter a time to wait (in minutes) [1004]: ") or "1004")
 argKeyword = input("Please enter a keyword to use: ")
