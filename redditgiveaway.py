@@ -94,8 +94,8 @@ except IOError:
   sys.exit(1)
 
 logger.info("Logging in...")
-r = praw.Reddit('djreischtest1') #used for posting the giveaway
-rmsg = praw.Reddit('djreischtest1') #used to comment and send messages to users. Can be the same/different account
+r = praw.Reddit('postaccount') #used for posting the giveaway
+rmsg = praw.Reddit('msgaccount') #used to comment and send messages to users. Can be the same/different account
 
 if argReddit and not argSubmission:
   try:
