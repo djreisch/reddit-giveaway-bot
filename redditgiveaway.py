@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
+from configparser import SafeConfigParser
+from dateutil import parser as dateparser
 import argparse
 import logging
 import random
@@ -15,46 +17,47 @@ logger = logging.getLogger("giveawaybot")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
 
-def humanize_seconds(seconds):
-  """
-  Returns a humanized string representing time difference
-  between now() and the input timestamp.
+parser = SafeConfigParser()
+parser.read('resume.ini')
 
-  The output rounds up to days, hours, minutes, or seconds.
-  4 days 5 hours returns '4 days'
-  0 days 4 hours 3 minutes returns '4 hours', etc...
-  """
-  minutes, seconds = divmod(seconds, 60)
-  hours, minutes = divmod(minutes, 60)
-
-  if hours > 0:
-    if hours == 1:  return "{0} hour".format(hours)
-    else:           return "{0} hours".format(hours)
-  elif minutes > 0:
-    if minutes == 1:return "{0} minute".format(minutes)
-    else:           return "{0} minutes".format(minutes)
-  elif seconds > 0:
-    if seconds == 1:return "{0} second".format(seconds)
-    else:           return "{0} seconds".format(seconds)
-  else:
-    return None
-
-inputAddr = input("Please enter a subreddit or submission url [steam_giveaway]: ") or "steam_giveaway"
-if inputAddr[:5] == 'http:' or inputAddr[:6] == 'https:':
-    argReddit = ''
-    argSubmission = inputAddr
-    argScrape = input("Scrape submission link for Giveaway Details? [y/N]: ") or 'no'
+if parser.get('SETTINGS', 'url') != 'null':
+    resumeSession = input('Resume data detected. Resume previous giveaway? [Y/n]: ') or 'y'
 else:
-    argReddit = inputAddr
-    argSubmission = ''
-    argScrape = 'no'
+    resumeSession = 'n'
 
-argWait = int(input("Please enter a time to wait (in minutes) [1004]: ") or "1004")
-argKeyword = input("Please enter a keyword to use: ")
-while(not argKeyword.strip()):
+if resumeSession == 'y':
+    logger.info("Loading in data from resume.ini")
+    argReddit = parser.get('SETTINGS', 'reddit')
+    argSubmission = parser.get('SETTINGS', 'url')
+    argWait = int(parser.get('SETTINGS', 'wait'))
+    argKeyword = parser.get('SETTINGS', 'keyword')
+    argKeyfile = parser.get('SETTINGS', 'keyfile')
+    timePosted = str((parser.get('SETTINGS', 'timePosted')))
+
+    timePosted = dateparser.parse(timePosted)
+    timeNow = datetime.utcnow()
+
+    d1_ts = time.mktime(timeNow.timetuple())
+    d2_ts = time.mktime(timePosted.timetuple())
+
+    argWait = argWait - ((d1_ts - d2_ts) / 60)
+
+else:
+    inputAddr = input("Please enter a subreddit or submission url [tinkertown]: ") or "tinkertown"
+    if inputAddr[:5] == 'http:' or inputAddr[:6] == 'https:':
+        argReddit = ''
+        argSubmission = inputAddr
+    else:
+        argReddit = inputAddr
+        argSubmission = ''
+        argScrape = 'no'
+
+    argWait = int(input("Please enter a time to wait (in minutes) [1004]: ") or "1004")
     argKeyword = input("Please enter a keyword to use: ")
+    while(not argKeyword.strip()):
+        argKeyword = input("Please enter a keyword to use: ")
 
-argKeyfile = input("Please enter a keyfile [keyfile.txt]") or "keyfile.txt"
+    argKeyfile = input("Please enter a keyfile [keyfile.txt]") or "keyfile.txt"
 
 argAge = argsfile.age
 argPoll = argsfile.poll
@@ -62,12 +65,6 @@ argReply = argsfile.reply
 argRandom = argsfile.random
 argKarmaLink = argsfile.karmaLink
 argKarmaComment = argsfile.karmaComment
-
-
-if argScrape[0] == 'y':
-  #ignore next imputs and scan for them inside the submission text body
-  logger.warn('Scraping Submission Link for Reusable Data')
-
 
 if argReddit == 'pcmasterrace':
   logger.warn('Using PCMasterRace Flairs')
@@ -100,7 +97,7 @@ logger.info("Logging in...")
 r = praw.Reddit('postaccount') #used for posting the giveaway
 rmsg = praw.Reddit('msgaccount') #used to comment and send messages to users. Can be the same/different account
 
-if argReddit:
+if argReddit and not argSubmission:
   try:
     logger.info("Creating submission...")
     body = strings.submission_body
@@ -124,6 +121,21 @@ if argReddit:
     rsub.disable_inbox_replies()
   except praw.exceptions.APIException as err:
     logger.error("Error with submission: " + str(err))
+
+
+logger.info("Saving current settings to resume.ini")
+
+parser['SETTINGS']['reddit'] =  argReddit
+parser.set('SETTINGS', 'url', argSubmission)
+parser.set('SETTINGS', 'wait', str(int(argWait)))
+parser['SETTINGS']['timePosted'] = str(datetime.utcnow())
+parser.set('SETTINGS', 'keyword', argKeyword)
+parser.set('SETTINGS', 'keyfile', argKeyfile)
+
+logger.info("Parser info saved!")
+
+with open('resume.ini', 'w') as configfile:
+        parser.write(configfile)
 
 authors = set()
 bannedUsers = set(line.strip() for line in open('banned.list'))
@@ -211,4 +223,16 @@ except praw.exceptions.APIException:
   logger.warning("Unable to edit original post to warn that giveaway "
     "is over. Recommend manually editing the post.")
 
-logger.info("Prizes are all distributed, exiting.")
+logger.info("Prizes are all distributed, erasing resume.ini.")
+
+parser.set('SETTINGS', 'reddit', 'null')
+parser.set('SETTINGS', 'url', 'null')
+parser.set('SETTINGS', 'wait', 'null')
+parser.set('SETTINGS', 'timePosted', 'null')
+parser.set('SETTINGS', 'keyword', 'null')
+parser.set('SETTINGS', 'keyfile', 'null')
+
+with open('resume.ini', 'w') as configfile:
+            parser.write(configfile)
+
+logger.info("Resume.ini erased. Exiting.")
