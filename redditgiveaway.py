@@ -23,9 +23,10 @@ prawParser = SafeConfigParser()
 prawParser.read('praw.ini')
 parser.read('resume.ini')
 
-if prawParser.get('postaccount', 'client_username')
+if prawParser.get('postaccount', 'client_username') == '':
     getCredentials = input('No Reddit credentials found in praw.ini! Should we run the script to help generate some? [Y/n]: ') or 'y'
     if getCredentials == 'y':
+        logger.warn('Beginning to start credentials generation')
         #script call
         #cout make sure you put your credentials in, once you hit enter the program will quit and you'll have to restart
         #exit after done so user can enter their stuff?
