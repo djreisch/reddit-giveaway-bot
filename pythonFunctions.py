@@ -93,3 +93,27 @@ def getToken():
     refresh_token = reddit.auth.authorize(params['code'])
     send_message(client, 'Refresh token: {}'.format(refresh_token))
     return 0
+
+def humanize_seconds(seconds):
+  """
+  Returns a humanized string representing time difference
+  between now() and the input timestamp.
+
+  The output rounds up to days, hours, minutes, or seconds.
+  4 days 5 hours returns '4 days'
+  0 days 4 hours 3 minutes returns '4 hours', etc...
+  """
+  minutes, seconds = divmod(seconds, 60)
+  hours, minutes = divmod(minutes, 60)
+
+  if hours > 0:
+    if hours == 1:  return "{0} hour".format(hours)
+    else:           return "{0} hours".format(hours)
+  elif minutes > 0:
+    if minutes == 1:return "{0} minute".format(minutes)
+    else:           return "{0} minutes".format(minutes)
+  elif seconds > 0:
+    if seconds == 1:return "{0} second".format(seconds)
+    else:           return "{0} seconds".format(seconds)
+  else:
+    return None
