@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
 from configparser import SafeConfigParser
+from dateutil import parser as dateparser
 import argparse
 import logging
 import random
@@ -21,23 +22,31 @@ parser.read('resume.ini')
 
 if parser.get('SETTINGS', 'url') != 'null':
     resumeSession = input('Resume data detected. Resume previous giveaway? [Y/n]: ') or 'y'
+else:
+    resumeSession = 'n'
 
 if resumeSession == 'y':
+    logger.info("Loading in data from resume.ini")
     argReddit = parser.get('SETTINGS', 'reddit')
     argSubmission = parser.get('SETTINGS', 'url')
-    argWait = parser.get('SETTINGS', 'wait')
+    argWait = int(parser.get('SETTINGS', 'wait'))
     argKeyword = parser.get('SETTINGS', 'keyword')
-    argKeyfile parser.get('SETTINGS', 'keyfile')
-    timePosted parser.get('SETTINGS', 'timePosted')
+    argKeyfile = parser.get('SETTINGS', 'keyfile')
+    timePosted = str((parser.get('SETTINGS', 'timePosted')))
 
-    argWait = argWait - (datetime.utcnow() - timePosted)
+    timePosted = dateparser.parse(timePosted)
+    timeNow = datetime.utcnow()
+
+    d1_ts = time.mktime(timeNow.timetuple())
+    d2_ts = time.mktime(timePosted.timetuple())
+
+    argWait = argWait - ((d1_ts - d2_ts) / 60)
 
 else:
-    inputAddr = input("Please enter a subreddit or submission url [steam_giveaway]: ") or "steam_giveaway"
+    inputAddr = input("Please enter a subreddit or submission url [tinkertown]: ") or "tinkertown"
     if inputAddr[:5] == 'http:' or inputAddr[:6] == 'https:':
         argReddit = ''
         argSubmission = inputAddr
-        argScrape = input("Scrape submission link for Giveaway Details? [y/N]: ") or 'no'
     else:
         argReddit = inputAddr
         argSubmission = ''
@@ -56,11 +65,6 @@ argReply = argsfile.reply
 argRandom = argsfile.random
 argKarmaLink = argsfile.karmaLink
 argKarmaComment = argsfile.karmaComment
-
-if argScrape[0] == 'y':
-  #ignore next imputs and scan for them inside the submission text body
-  logger.warn('Scraping Submission Link for Reusable Data')
-
 
 if argReddit == 'pcmasterrace':
   logger.warn('Using PCMasterRace Flairs')
@@ -119,12 +123,16 @@ if argReddit and not argSubmission:
     logger.error("Error with submission: " + str(err))
 
 
-parser.set('SETTINGS', 'reddit', argReddit)
+logger.info("Saving current settings to resume.ini")
+
+parser['SETTINGS']['reddit'] =  argReddit
 parser.set('SETTINGS', 'url', argSubmission)
-parser.set('SETTINGS', 'wait', argWait)
-parser.set('SETTINGS', 'timePosted', datetime.utcnow())
+parser.set('SETTINGS', 'wait', str(int(argWait)))
+parser['SETTINGS']['timePosted'] = str(datetime.utcnow())
 parser.set('SETTINGS', 'keyword', argKeyword)
 parser.set('SETTINGS', 'keyfile', argKeyfile)
+
+logger.info("Parser info saved!")
 
 with open('resume.ini', 'w') as configfile:
         parser.write(configfile)
