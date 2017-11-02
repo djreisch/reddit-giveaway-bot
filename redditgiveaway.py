@@ -18,7 +18,19 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
 
 parser = SafeConfigParser()
+prawParser = SafeConfigParser()
+
+prawParser.read('praw.ini')
 parser.read('resume.ini')
+
+if prawParser.get('postaccount', 'client_username')
+    getCredentials = input('No Reddit credentials found in praw.ini! Should we run the script to help generate some? [Y/n]: ') or 'y'
+    if getCredentials == 'y':
+        #script call
+        #cout make sure you put your credentials in, once you hit enter the program will quit and you'll have to restart
+        #exit after done so user can enter their stuff?
+    else:
+        sys.exit("No credentials found in praw.ini! Exiting.")
 
 if parser.get('SETTINGS', 'url') != 'null':
     resumeSession = input('Resume data detected. Resume previous giveaway? [Y/n]: ') or 'y'
@@ -43,7 +55,7 @@ if resumeSession == 'y':
     argWait = argWait - ((d1_ts - d2_ts) / 60)
 
 else:
-    inputAddr = input("Please enter a subreddit or submission url [tinkertown]: ") or "tinkertown"
+    inputAddr = input("Please enter a subreddit or submission url [steam_giveaway]: ") or "steam_giveaway"
     if inputAddr[:5] == 'http:' or inputAddr[:6] == 'https:':
         argReddit = ''
         argSubmission = inputAddr
